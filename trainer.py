@@ -61,13 +61,13 @@ def unicode2ascii(s):
 def normalize_string(s):
     s = unicode2ascii(s.lower().strip())
     s = re.sub(r"([.!?])", r" \1", s)
-    s = re.sub(r"[^a-z_AZ.!?]+", r" ", s)
+    s = re.sub(r"[^a-z_AZ.!?]+", r" ", s)  # 非a-z_AZ.!?的数据用空格代替
 
     return s
 
 def read_langs(lang1, lang2, reverse=False):
-    lines = open('%s-%s.txt' % (lang1, lang2), encoding='utf-8').read().strip().split('\n')
-    pairs = [[normalize_string(s) for s in l.split('\t')] for l in lines]
+    lines = open('%s-%s.txt' % (lang1, lang2), encoding='utf-8').read().strip().split('\n')  # 读取文件，第一句为原文，制表符\t分隔的第二句为关键信息
+    pairs = [[normalize_string(s) for s in l.split('\t')] for l in lines]  # pairs为列表，pairs[0] 原文 pairs[1] 关键信息
 
     if reverse:
         pairs       = [list(reverse(p)) for p in pairs]
@@ -97,7 +97,7 @@ def prepare_data(lang1, lang2, reverse=False):
 
     return input_lang, output_lang, pairs
 
-input_lang, output_lang, pairs = prepare_data('keyword', 'data', False)
+input_lang, output_lang, pairs = prepare_data('keyword', 'data', False)  # input_lang 存储了原文的词汇信息；output_lang存储了关键信息的词汇信息 pairs
 
 class EncoderRNN(nn.Module):
 
@@ -188,6 +188,9 @@ class AttnDecoderRNN(nn.Module):
             return result
 
 def indexes_from_sentence(lang, sentence):
+    """
+    sentence mapping
+    """
     sent_spl = sentence.split(' ')
     return [lang.word2index[word] for word in sent_spl if word in lang.word2index]
 
@@ -280,12 +283,18 @@ def time_since(since, percent):
     return '%s (- %s)' % (as_minutes(s), as_minutes(rs))
 
 def train_interations(encoder, decoder, n_iters, print_every=1000, learning_rate=0.01):
+    """
+    encoder: encoder模型
+    decoder：decoder模型
+    n_iters:
+    
+    """
     start            = time.time()
     print_loss_total = 0
 
     encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
     decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
-    training_pairs    = [variables_from_pair(random.choice(pairs)) for i in range(n_iters)]
+    training_pairs    = [variables_from_pair(random.choice(pairs)) for i in range(n_iters)]  # 随机抽取n_iters个数据对进行训练
     criterion         = nn.NLLLoss()
 
     for iter in range(1, n_iters + 1):
